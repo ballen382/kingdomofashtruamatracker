@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kingdom of Ash">
+<title>Kingdom of Ash Tracker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #0c0f14;
+    --header-bg: #0f1219;
+    --main: #a89bc0;
+    --skip: #c07070;
+    --skim: #c0a060;
+    --must: #70a880;
+    --text: #e0d4c8;
+    --muted: #6a6878;
+    --done-color: #2e2a3a;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: Georgia, 'Times New Roman', serif;
+    min-height: 100vh;
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
+
+  #header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--header-bg);
+    border-bottom: 1px solid rgba(168,155,192,0.2);
+    padding: 16px 20px 12px;
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #8a7a90;
+    margin-bottom: 2px;
+    font-family: system-ui, sans-serif;
+  }
+
+  h1 {
+    font-size: 20px;
+    font-weight: normal;
+    color: #f0e8f8;
+    line-height: 1.2;
+  }
+
+  .legend {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+  }
+
+  .legend span {
+    font-size: 10px;
+    font-family: system-ui, sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  .header-right {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .pct {
+    font-size: 28px;
+    font-weight: bold;
+    color: #f0e8f8;
+    line-height: 1;
+  }
+
+  .count {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+    font-family: system-ui, sans-serif;
+  }
+
+  .progress-bar {
+    margin-top: 12px;
+    height: 5px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #a89bc0, #c084a0);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+
+  .controls {
+    display: flex;
+    gap: 7px;
+    margin-top: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 10px;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: transparent;
+    color: var(--muted);
+    font-family: system-ui, sans-serif;
+    letter-spacing: 0.04em;
+    transition: all 0.15s;
+  }
+
+  .filter-btn.active {
+    border-color: var(--main);
+    background: rgba(168,155,192,0.15);
+    color: #f0e8f8;
+  }
+
+  .filter-btn.active-skip {
+    border-color: var(--skip);
+    background: rgba(192,112,112,0.15);
+    color: #f0e8f8;
+  }
+
+  .spacer { flex: 1; }
+
+  .next-btn {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 10px;
+    cursor: pointer;
+    border: 1px solid rgba(168,155,192,0.4);
+    background: rgba(168,155,192,0.1);
+    color: var(--main);
+    font-family: system-ui, sans-serif;
+  }
+
+  .reset-btn {
+    padding: 4px 9px;
+    border-radius: 20px;
+    font-size: 10px;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.07);
+    background: transparent;
+    color: #3a2a38;
+    font-family: system-ui, sans-serif;
+  }
+
+  #list {
+    padding: 12px 20px 80px;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-family: system-ui, sans-serif;
+    color: var(--muted);
+    margin: 16px 0 6px 4px;
+  }
+
+  .chapter-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    padding: 11px 13px;
+    border-radius: 9px;
+    margin-bottom: 3px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: opacity 0.15s, background 0.15s;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .chapter-row.done { opacity: 0.35; }
+
+  .chapter-row.type-skip {
+    background: rgba(192,112,112,0.07);
+    border-color: rgba(192,112,112,0.2);
+  }
+
+  .chapter-row.type-skim {
+    background: rgba(192,160,96,0.07);
+    border-color: rgba(192,160,96,0.15);
+  }
+
+  .chapter-row.type-must {
+    background: rgba(112,168,128,0.07);
+    border-color: rgba(112,168,128,0.2);
+  }
+
+  .chapter-row.is-next {
+    border-color: rgba(168,155,192,0.45) !important;
+    background: rgba(168,155,192,0.12) !important;
+  }
+
+  .checkbox {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid rgba(255,255,255,0.15);
+    background: transparent;
+    transition: all 0.15s;
+  }
+
+  .checkbox.checked {
+    border-color: var(--main);
+    background: var(--main);
+  }
+
+  .checkbox svg { display: none; }
+  .checkbox.checked svg { display: block; }
+
+  .row-content { flex: 1; min-width: 0; }
+
+  .row-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .ch-num {
+    font-size: 14px;
+    color: var(--text);
+    transition: color 0.15s;
+  }
+
+  .chapter-row.done .ch-num {
+    color: var(--done-color);
+    text-decoration: line-through;
+  }
+
+  .tag {
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    font-family: system-ui, sans-serif;
+    padding: 2px 7px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+  }
+
+  .tag-skip { color: var(--skip); background: rgba(192,112,112,0.15); }
+  .tag-skim { color: var(--skim); background: rgba(192,160,96,0.15); }
+  .tag-must { color: var(--must); background: rgba(112,168,128,0.15); }
+
+  .row-note {
+    font-size: 11px;
+    color: #7a6a80;
+    margin-top: 4px;
+    line-height: 1.4;
+    font-family: system-ui, sans-serif;
+  }
+
+  .step-num {
+    font-size: 10px;
+    color: #2a1e28;
+    flex-shrink: 0;
+    font-family: system-ui, sans-serif;
+    margin-top: 3px;
+  }
+
+  .rescue-banner {
+    background: linear-gradient(135deg, rgba(168,155,192,0.12), rgba(192,132,160,0.08));
+    border: 1px solid rgba(168,155,192,0.25);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 16px 0 8px;
+    font-family: system-ui, sans-serif;
+  }
+
+  .rescue-banner .banner-title {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--main);
+    margin-bottom: 4px;
+  }
+
+  .rescue-banner p {
+    font-size: 12px;
+    color: #9a8aa0;
+    line-height: 1.5;
+  }
+
+  .finish-msg {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--main);
+    font-size: 16px;
+    letter-spacing: 0.08em;
+  }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div class="header-top">
+    <div class="header-left">
+      <div class="eyebrow">Throne of Glass · Book 7</div>
+      <h1>Kingdom of Ash</h1>
+      <div class="legend">
+        <span><span class="dot" style="background:#c07070"></span> Skip</span>
+        <span><span class="dot" style="background:#c0a060"></span> Skim</span>
+        <span><span class="dot" style="background:#70a880"></span> Must Read</span>
+        <span><span class="dot" style="background:#a89bc0"></span> Read</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="pct" id="pct">0%</div>
+      <div class="count" id="count">0 / 130</div>
+    </div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="fill" style="width:0%"></div></div>
+  <div class="controls">
+    <button class="filter-btn active" id="btn-all" onclick="setFilter('all')">All</button>
+    <button class="filter-btn" id="btn-skip" onclick="setFilter('skip')">Skip/Skim</button>
+    <button class="filter-btn" id="btn-must" onclick="setFilter('must')">Must Read</button>
+    <div class="spacer"></div>
+    <button class="next-btn" onclick="goNext()">→ Next</button>
+    <button class="reset-btn" onclick="resetAll()">Reset</button>
+  </div>
+</div>
+
+<div id="list"></div>
+
+<script>
+// type: "read" | "skip" | "skim" | "must"
+// note: optional explanation
+const CHAPTERS = [
+  {id:1, label:"Chapter 1", type:"read"},
+  {id:2, label:"Chapter 2", type:"read"},
+  {id:3, label:"Chapter 3", type:"skip", note:"First Aelin torture chapter. Stone altar, Cairn torturing her, Fenrys forced to watch. Safe to skip entirely."},
+  {id:4, label:"Chapter 4", type:"read"},
+  {id:5, label:"Chapter 5", type:"skim", note:"Torture continues in Aelin POV. Skim or skip."},
+  {id:6, label:"Chapter 6", type:"skim", note:"Torture continues. Skim or skip."},
+  {id:7, label:"Chapter 7", type:"skim", note:"Torture continues. Skim or skip."},
+  {id:8, label:"Chapter 8", type:"skim", note:"Torture continues. Skim or skip."},
+  {id:9, label:"Chapter 9", type:"skim", note:"Fenrys removes glass shards from Aelin's body. Skim or skip."},
+  {id:10, label:"Chapter 10", type:"read"},
+  {id:11, label:"Chapter 11", type:"read"},
+  {id:12, label:"Chapter 12", type:"read"},
+  {id:13, label:"Chapter 13", type:"read"},
+  {id:14, label:"Chapter 14", type:"read"},
+  {id:15, label:"Chapter 15", type:"read"},
+  {id:16, label:"Chapter 16", type:"read"},
+  {id:17, label:"Chapter 17", type:"read"},
+  {id:18, label:"Chapter 18", type:"read"},
+  {id:19, label:"Chapter 19", type:"read"},
+  {id:20, label:"Chapter 20", type:"read"},
+  {id:21, label:"Chapter 21", type:"read"},
+  {id:22, label:"Chapter 22", type:"read"},
+  {id:23, label:"Chapter 23", type:"read"},
+  {id:24, label:"Chapter 24", type:"read"},
+  {id:25, label:"Chapter 25", type:"skip", note:"The worst chapters. Cairn plans to torture Aelin with fire. She realizes this will break her. Skip."},
+  {id:26, label:"Chapter 26", type:"skip", note:"Aelin tries to fight back, Cairn throws her to the floor. Hardest chapter in the book. Skip. Key info: Fenrys breaks his blood oath and attacks Cairn, giving Aelin a window to run."},
+  {id:27, label:"Chapter 27", type:"must", note:"Fenrys holds Cairn off. Rowan storms the Fae camp. Aelin runs out in chains and an iron mask. The rescue begins."},
+  {id:28, label:"Chapter 28", type:"must", note:"The rescue. Read this one."},
+  {id:29, label:"Chapter 29", type:"must", note:"Rowan and Aelin reunite. They work to remove the iron mask using a wyrdmark. All her magic flares out. Worth reading — it's cathartic."},
+  {id:30, label:"Chapter 30", type:"must", note:"They notice Maeve erased every scar Aelin ever had, including Endovier and her oath to Nehemia. Read this."},
+  {id:31, label:"Chapter 31", type:"read"},
+  {id:32, label:"Chapter 32", type:"read"},
+  {id:33, label:"Chapter 33", type:"read"},
+  {id:34, label:"Chapter 34", type:"read"},
+  {id:35, label:"Chapter 35", type:"read"},
+  {id:36, label:"Chapter 36", type:"read"},
+  {id:37, label:"Chapter 37", type:"read"},
+  {id:38, label:"Chapter 38", type:"read"},
+  {id:39, label:"Chapter 39", type:"read"},
+  {id:40, label:"Chapter 40", type:"read"},
+  {id:41, label:"Chapter 41", type:"read"},
+  {id:42, label:"Chapter 42", type:"read"},
+  {id:43, label:"Chapter 43", type:"read"},
+  {id:44, label:"Chapter 44", type:"read"},
+  {id:45, label:"Chapter 45", type:"read"},
+  {id:46, label:"Chapter 46", type:"read"},
+  {id:47, label:"Chapter 47", type:"read"},
+  {id:48, label:"Chapter 48", type:"read"},
+  {id:49, label:"Chapter 49", type:"read"},
+  {id:50, label:"Chapter 50", type:"read"},
+  {id:51, label:"Chapter 51", type:"read"},
+  {id:52, label:"Chapter 52", type:"read"},
+  {id:53, label:"Chapter 53", type:"read"},
+  {id:54, label:"Chapter 54", type:"read"},
+  {id:55, label:"Chapter 55", type:"read"},
+  {id:56, label:"Chapter 56", type:"read"},
+  {id:57, label:"Chapter 57", type:"read"},
+  {id:58, label:"Chapter 58", type:"read"},
+  {id:59, label:"Chapter 59", type:"read"},
+  {id:60, label:"Chapter 60", type:"read"},
+  {id:61, label:"Chapter 61", type:"read"},
+  {id:62, label:"Chapter 62", type:"read"},
+  {id:63, label:"Chapter 63", type:"read"},
+  {id:64, label:"Chapter 64", type:"read"},
+  {id:65, label:"Chapter 65", type:"read"},
+  {id:66, label:"Chapter 66", type:"read"},
+  {id:67, label:"Chapter 67", type:"read"},
+  {id:68, label:"Chapter 68", type:"read"},
+  {id:69, label:"Chapter 69", type:"read"},
+  {id:70, label:"Chapter 70", type:"read"},
+  {id:71, label:"Chapter 71", type:"read"},
+  {id:72, label:"Chapter 72", type:"read"},
+  {id:73, label:"Chapter 73", type:"read"},
+  {id:74, label:"Chapter 74", type:"read"},
+  {id:75, label:"Chapter 75", type:"read"},
+  {id:76, label:"Chapter 76", type:"read"},
+  {id:77, label:"Chapter 77", type:"read"},
+  {id:78, label:"Chapter 78", type:"read"},
+  {id:79, label:"Chapter 79", type:"read"},
+  {id:80, label:"Chapter 80", type:"read"},
+  {id:81, label:"Chapter 81", type:"read"},
+  {id:82, label:"Chapter 82", type:"read"},
+  {id:83, label:"Chapter 83", type:"read"},
+  {id:84, label:"Chapter 84", type:"read"},
+  {id:85, label:"Chapter 85", type:"read"},
+  {id:86, label:"Chapter 86", type:"read"},
+  {id:87, label:"Chapter 87", type:"read"},
+  {id:88, label:"Chapter 88", type:"read"},
+  {id:89, label:"Chapter 89", type:"read"},
+  {id:90, label:"Chapter 90", type:"read"},
+  {id:91, label:"Chapter 91", type:"read"},
+  {id:92, label:"Chapter 92", type:"read"},
+  {id:93, label:"Chapter 93", type:"read"},
+  {id:94, label:"Chapter 94", type:"read"},
+  {id:95, label:"Chapter 95", type:"read"},
+  {id:96, label:"Chapter 96", type:"read"},
+  {id:97, label:"Chapter 97", type:"read"},
+  {id:98, label:"Chapter 98", type:"read"},
+  {id:99, label:"Chapter 99", type:"read"},
+  {id:100, label:"Chapter 100", type:"read"},
+  {id:101, label:"Chapter 101", type:"read"},
+  {id:102, label:"Chapter 102", type:"read"},
+  {id:103, label:"Chapter 103", type:"read"},
+  {id:104, label:"Chapter 104", type:"read"},
+  {id:105, label:"Chapter 105", type:"read"},
+  {id:106, label:"Chapter 106", type:"read"},
+  {id:107, label:"Chapter 107", type:"read"},
+  {id:108, label:"Chapter 108", type:"read"},
+  {id:109, label:"Chapter 109", type:"read"},
+  {id:110, label:"Chapter 110", type:"read"},
+  {id:111, label:"Chapter 111", type:"read"},
+  {id:112, label:"Chapter 112", type:"read"},
+  {id:113, label:"Chapter 113", type:"read"},
+  {id:114, label:"Chapter 114", type:"read"},
+  {id:115, label:"Chapter 115", type:"read"},
+  {id:116, label:"Chapter 116", type:"read"},
+  {id:117, label:"Chapter 117", type:"read"},
+  {id:118, label:"Chapter 118", type:"read"},
+  {id:119, label:"Chapter 119", type:"read"},
+  {id:120, label:"Chapter 120", type:"read"},
+  {id:121, label:"Chapter 121", type:"read"},
+  {id:122, label:"Chapter 122", type:"read"},
+  {id:123, label:"Chapter 123", type:"read"},
+  {id:124, label:"Chapter 124", type:"read"},
+  {id:125, label:"Chapter 125", type:"read"},
+  {id:126, label:"Chapter 126", type:"read"},
+  {id:127, label:"Chapter 127", type:"read"},
+  {id:128, label:"Chapter 128", type:"read"},
+  {id:129, label:"Chapter 129", type:"read"},
+  {id:130, label:"Chapter 130", type:"read"},
+];
+
+const TOTAL = CHAPTERS.length;
+const KEY = "koa-tracker-v1";
+let checked = {};
+let filter = "all";
+
+try { const s = localStorage.getItem(KEY); if (s) checked = JSON.parse(s); } catch(e) {}
+
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(checked)); } catch(e) {}
+}
+
+function toggle(id) {
+  if (checked[id]) delete checked[id]; else checked[id] = true;
+  save();
+  updateHeader();
+  renderList();
+}
+
+function updateHeader() {
+  const done = Object.keys(checked).length;
+  const pct = Math.round((done / TOTAL) * 100);
+  document.getElementById("pct").textContent = pct + "%";
+  document.getElementById("count").textContent = done + " / " + TOTAL;
+  document.getElementById("fill").style.width = pct + "%";
+}
+
+function getNext() {
+  const visible = getFiltered();
+  return visible.find(c => !checked[c.id]);
+}
+
+function getFiltered() {
+  if (filter === "all") return CHAPTERS;
+  if (filter === "skip") return CHAPTERS.filter(c => c.type === "skip" || c.type === "skim");
+  if (filter === "must") return CHAPTERS.filter(c => c.type === "must");
+  return CHAPTERS;
+}
+
+function setFilter(f) {
+  filter = f;
+  ["all","skip","must"].forEach(x => {
+    const btn = document.getElementById("btn-" + x);
+    btn.className = "filter-btn" + (x === f ? (x === "skip" ? " active-skip" : " active") : "");
+  });
+  renderList();
+}
+
+function goNext() {
+  const next = getNext();
+  if (!next) return;
+  if (filter !== "all") setFilter("all");
+  setTimeout(() => {
+    const el = document.getElementById("row-" + next.id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 50);
+}
+
+function resetAll() {
+  if (confirm("Reset all progress?")) { checked = {}; save(); updateHeader(); renderList(); }
+}
+
+function tagHTML(type) {
+  if (type === "skip") return `<span class="tag tag-skip">Skip</span>`;
+  if (type === "skim") return `<span class="tag tag-skim">Skim</span>`;
+  if (type === "must") return `<span class="tag tag-must">Must Read</span>`;
+  return "";
+}
+
+function typeClass(type) {
+  if (type === "skip") return " type-skip";
+  if (type === "skim") return " type-skim";
+  if (type === "must") return " type-must";
+  return "";
+}
+
+function renderList() {
+  const list = document.getElementById("list");
+  const filtered = getFiltered();
+  const next = getNext();
+  let html = "";
+
+  // Banner
+  html += `<div class="rescue-banner">
+    <div class="banner-title">Torture Arc Overview</div>
+    <p>Maeve tortures Aelin daily trying to get her to swear a blood oath. Fenrys is forced to witness everything. Aelin hammers on her iron coffin sending power down her mating bond — that's how Rowan finds her. <strong style="color:#a89bc0">Rescue happens around Chapters 27–30.</strong> After that the book picks up fast.</p>
+  </div>`;
+
+  filtered.forEach((ch) => {
+    const isDone = !!checked[ch.id];
+    const isNext = filter === "all" && next && next.id === ch.id;
+
+    html += `<div class="chapter-row${typeClass(ch.type)}${isDone?" done":""}${isNext?" is-next":""}"
+      id="row-${ch.id}"
+      onclick="toggle(${ch.id})">
+      <div class="checkbox${isDone?" checked":""}">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path d="M1.5 5L4 7.5L8.5 2.5" stroke="#0c0f14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="row-content">
+        <div class="row-top">
+          <span class="ch-num">${ch.label}</span>
+          ${tagHTML(ch.type)}
+        </div>
+        ${ch.note ? `<div class="row-note">${ch.note}</div>` : ""}
+      </div>
+      <span class="step-num">${ch.id}</span>
+    </div>`;
+  });
+
+  const done = Object.keys(checked).length;
+  if (done === TOTAL) {
+    html += `<div class="finish-msg">✦ You finished the Throne of Glass series ✦</div>`;
+  }
+
+  list.innerHTML = html;
+}
+
+renderList();
+updateHeader();
+</script>
+</body>
+</html>
